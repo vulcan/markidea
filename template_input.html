@@ -1,0 +1,159 @@
+$def with(path,content,files)
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="utf-8">
+    <title>MarkIdea</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta name="description" content="">
+    <meta name="author" content="">
+
+    <!-- Le styles -->
+    <link href="/static/css/bootstrap.css" rel="stylesheet">
+    <style>
+      body {
+        padding-top: 60px; /* 60px to make the container go all the way to the bottom of the topbar */
+      }
+      .CodeMirror
+      {
+          height: 500px;
+      }
+        .CodeMirror-wrap
+        {
+            border: 1px solid #ccc;
+        }
+    #markdown-preview
+    {
+        min-height: 400px;
+		height: 700px;
+		overflow-x: hidden;
+		overflow-y: scroll;
+    }
+    </style>
+    <link href="/static/css/bootstrap-responsive.css" rel="stylesheet">
+    <link href="/static/css/markdown.css" rel="stylesheet">
+    <link href="/static/css/jquery.fileupload-ui.css" rel="stylesheet">
+    <link href="/static/css/jquery.fileupload.css" rel="stylesheet">
+    <link href="/static/codemirror/lib/codemirror.css" rel="stylesheet">
+
+    <!-- HTML5 shim, for IE6-8 support of HTML5 elements -->
+    <!--[if lt IE 9]>
+      <script src="../assets/js/html5shiv.js"></script>
+    <![endif]-->
+  </head>
+  <body>
+    <div class="navbar navbar-inverse navbar-fixed-top">
+      <div class="navbar-inner">
+        <div class="container">
+          <button type="button" class="btn btn-navbar" data-toggle="collapse" data-target=".nav-collapse">
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+            <span class="icon-bar"></span>
+          </button>
+          <a class="brand" href="#">MarkIdea</a>
+          <div class="nav-collapse collapse">
+            <ul class="nav">
+              <li class="active"><a href="$config.baseurl/">Home</a></li>
+              <li><a href="$config.baseurl/manual/index.md">Help</a></li>
+            </ul>
+          </div><!--/.nav-collapse -->
+        </div>
+      </div>
+    </div>
+
+    <div class="container-fluid">
+		<div class="row-fluid">
+			<div class="span6">
+                <form method="post" action="$config.baseurl/$path/save">
+                <textarea name="source" id="markdown-source">$:content</textarea>
+                <br>
+                <div class="input-append">
+                    <input class="input-xlarge" type="text" name="message" id="message" placeholder="Comment"/>
+                    <button type="submit" class="btn btn-primary" onclick="return checkmsg();">Commit</button>
+                    <a class="btn" href="$config.baseurl/$path">Cancel</a>
+                </div>
+                </form>
+                <hr>
+                <form method="post" action="$config.baseurl/$path/upload">
+                <span class="btn btn-success fileinput-button">
+                    <i class="icon-plus icon-white"></i>
+                    <span>Add Attachment</span>
+                    <input type="file" id="fileupload" name="myfile" multiple="true"/>
+                </span>
+                $if files:
+                    <h6>Attachments:</h6>
+                <div id="filelist">
+                $for f in files:
+                    <p class="alert alert-info"><a href="$f">$f</a>
+                        <span class="pull-right">
+                        <a class="btn btn-danger btn-mini" href="#" onclick="delfile('$f', this)">Delete</a>
+                        </span>
+                    </p>
+                </div>
+                </form>
+			</div>
+			<div class="span6">
+				<div class="markdown-body" id="markdown-preview"></div>
+			</div>
+		</div>
+    </div>
+    <script src="/static/js/jquery.js"></script>
+    <script src="/static/js/bootstrap.js"></script>
+    <script src="/static/js/bootstrap-treeview.js"></script>
+    <script src="/static/codemirror/lib/codemirror.js"></script>
+    <script src="/static/codemirror/mode/markdown/markdown.js"></script>
+    <!--file upload-->
+    <script src="/static/js/vendor/jquery.ui.widget.js"></script>
+    <script src="/static/js/jquery.iframe-transport.js"></script>
+    <script src="/static/js/jquery.fileupload.js"></script>
+	<script type="text/javascript" charset="utf-8">
+    var editor = CodeMirror.fromTextArea(document.getElementById('markdown-source'), {
+        mode:'markdown',
+        lineNumbers: true,
+        lineWrapping: true
+    });
+    function preview(editor){
+        //preview the markdown use the remote source translate
+        var url = '$config.baseurl/$path/preview';
+        var src = editor.getValue();
+        $$.post(url, {src: src}, function(data){
+            $$('#markdown-preview').html(data);
+        });
+    }
+    //register codemirror events
+    editor.on('changes', preview)
+    preview(editor); //initial content
+    function checkmsg()
+    {
+        if ($$('#message').val() == '')
+        {
+            alert('Please commit with comment！');
+            return false;
+        }
+        return true;
+    }
+    function delfile(fn, trigger)
+    {
+        if(confirm('Confirm Deleting')) {
+            $$.getJSON(fn+'/delfile', function(data){
+                if (data.result) {
+                    $$(trigger).parent().parent().remove();
+                } else {
+                    alert('Failed,' + data.reason);
+                }
+            });
+        }
+    }
+    $$(function(){
+        $$('#fileupload').fileupload({
+        dataType: 'json',
+        done: function (e, data) {
+            $$.each(data.result.files, function (index, file) {
+                $$('<p class="alert alert-info"/>').append($$('<a/>').attr('href', file.name).text(file.name)).appendTo('#filelist');
+            });
+        }
+    });
+    });
+	</script>
+    </body>
+</html>

@@ -1,0 +1,13 @@
+What's the next?
+========
++ default page: index.md or scan the directory and generate a default page
++ write the guide of how to write Markdown manual
++ the web dav deployment and mecurial push
++ custom UI 
++ make index for searching, consider sphinx
++ use or integrate mercurial to do/show version control information
++ use cache to improve performance
++ online editing
++ just like github, account and password for validation
++ write comment on the document
++ ** annotation on the document

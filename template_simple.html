@@ -1,0 +1,22 @@
+$def with(path, body, title='')
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN"
+"http://www.w3.org/TR/html4/loose.dtd">
+<!--template for print-->
+<html>
+    <head>
+        <meta http-equiv="content-type" content="text/html; charset=utf-8" />
+        <title>MarkIdea-$path $title</title>
+        <link rel="stylesheet" href="/static/css/markdown.css"  type="text/css" />
+        <style>
+        body {
+          width: 45em;
+          margin: 16px auto;
+        }
+        </style>
+    </head>
+    <body>
+        <div class="markdown-body">
+        $:body
+        </div>
+    </body>
+</html>

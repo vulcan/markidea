@@ -1,0 +1,7 @@
+$def with(result)
+$var title: Search Results 
+<div class="row-fluid">
+    <h2>Results-found $len(result) documents</h2>
+    $for r in result:
+        <div class="well"><a href="$config.baseurl$r[0]">$r[1]</a></div>
+</div>
