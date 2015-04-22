@@ -11,7 +11,7 @@ from util import *
 import repo
 import cas
 import upload
-from mdext import AutoIndexExtension, HgLogExtension
+from mdext import AutoIndexExtension, HgLogExtension, LastChangeExtension
 
 class reindex:
     def GET(self):
@@ -127,7 +127,8 @@ def _render(text, path):
     dirpath = os.path.dirname(filepath)
     extensions=['markdown.extensions.tables',\
             AutoIndexExtension(dirpath),\
-            HgLogExtension(path)] #the custom extension
+            HgLogExtension(path),\
+            LastChangeExtension(path)] #the custom extension
     body = markdown.markdown(text, extensions=extensions )
     return body
 

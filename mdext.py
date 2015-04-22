@@ -123,7 +123,8 @@ class AutoIndexProcessor(MarkerProcessor):
         for i in result:
             li = etree.SubElement(ul, 'li')
             alink = etree.SubElement(li, 'a')
-            alink.attrib['href'] = "%s/%s" % (site_path, i[0])
+            href = "%s/%s" % (site_path, i[0])
+            alink.attrib['href'] = href
             alink.text = i[1]
         #replace the marker with generated dir index
         self.replace_marker(root, div)
@@ -192,6 +193,96 @@ class HgLogExtension(Extension):
         site_ext = HgLogProcessor(self.path, '[SiteLog]', self.length, True)
         md.treeprocessors.add('sitelog', site_ext, "_end")
 
+
+class LastChangeProcessor(MarkerProcessor):
+    def __init__(self, path, marker='[LastChange]', length=5):
+        """
+        list dir or page dir
+        sitelog: True if require all logs of data repo
+        """
+        self.path = path
+        self.marker = marker
+        self.length = length
+
+    def procfile(self, fname):
+        fullpath = os.path.join(config.datadir, fname)
+        if not os.path.exists(fullpath):
+            return None #file not exists
+
+        fsock = codecs.open(fullpath, 'r', 'utf-8')
+        line = fsock.readline() #read the first line
+        #strip blank lines
+        while line == '\n':
+            line = fsock.readline()
+
+        result = fname #fallback to file name
+        if line.startswith('#'):
+            result = line[1:].strip()
+        else:
+            #try next line check if line ==========
+            nextline = fsock.readline()
+            if nextline.startswith('====='):
+                result = line
+        fsock.close()
+        return result
+
+    def run(self, root):
+        """
+        list the mercurial log and list the link
+        """
+        from repo import connect_repo, get_hglog_url
+        try:
+            cli = connect_repo(self.path) #connect the path
+            #get the tip version
+            tip = cli.tip()
+            rev = int(tip[0])
+            start_rev = rev - 2*self.length #try prefetch the changes
+            if start_rev < 0:
+                start_rev = 0
+            status = cli.status(rev=start_rev)
+            # get the changed files but no commiter and date info
+            # TODO may be get from the log info, need to change hglib's default log function  
+            div = etree.Element('div')
+            div.attrib['class'] = 'logdiv'
+            ul = etree.SubElement(div, 'ul')
+            count = 0
+            for item in status:
+                if count > self.length:
+                    break #only give required length of item
+                flag = item[0]
+                if flag not in ['A', 'M']:
+                    continue
+                #only generate link for txt and md file
+                if item[1].endswith('.txt') or item[1].endswith('.md'):
+                    li = etree.SubElement(ul, 'li')
+                    span = etree.SubElement(li, 'span')
+                    if flag == 'A':
+                        span.text = u"新增，"
+                    elif flag == 'M':
+                        span.text = u"修改，"
+                    alink = etree.SubElement(li, 'a')
+                    href = "%s/%s" % (config.baseurl, item[1].replace('\\', '/'))
+                    #remember to encode the path character to utf8
+                    alink.attrib['href'] = href.decode('utf8') #make link
+                    # read file and get the first line
+                    text = self.procfile(item[1])
+                    alink.text = text
+                    count = count + 1
+            cli.close()
+            self.replace_marker(root, div)
+        except OSError, e:
+            print e
+            pass #do nothing because log retrieve may fail
+
+class LastChangeExtension(Extension):
+    def __init__(self, path, length=5):
+        self.path = path
+        self.length = length
+
+    def extendMarkdown(self, md, md_globals):
+        md.registerExtension(self)
+        ext = LastChangeProcessor(self.path, '[LastChange]', self.length)
+        md.treeprocessors.add('lastChange', ext, "_end")
 
 if __name__ == '__main__':
     import config
